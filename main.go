@@ -28,7 +28,7 @@ func  main()  {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Ping()
+	defer db.Close()
 	fmt.Println("Connected")
 
 
