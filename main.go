@@ -8,17 +8,21 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/contrib/static"
+	"github.com/gin-contrib/cors"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"database/sql"
+	"github.com/ankitjena/game-your-skills/db/models"
+	"github.com/ankitjena/game-your-skills/db/handlers"
 )
 
 func  main()  {
-	//set the router as the default shipped with gin
-	router := gin.Default()
-
-	// connect to postgres
+	/** 
+		Connects to postgres
+		If we reach the fmt, that means we have 
+		connected successfully
+	**/
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -29,9 +33,15 @@ func  main()  {
 		panic(err)
 	}
 	defer db.Close()
-	fmt.Println("Connected")
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Successfully connected to Database!")
 
-
+	//set the router as the default shipped with gin
+	router := gin.Default()
+	router.Use(cors.Default())
 	//serve frontend static files
 	router.Use(static.Serve("/", static.LocalFile("./client/build", true)))
 
@@ -44,6 +54,19 @@ func  main()  {
 			})
 		})
 	}
+	
+	// Setup Login/Register route
+	router.POST("/register", func(c *gin.Context) {
+		var user models.User
+		err := c.BindJSON(&user)
+		if err != nil {
+			panic(err)
+		}
+		res := handlers.HandleLogin(&user)
+		c.JSON(200, gin.H {
+			"message": res,
+		})
+	})
 	
 	//start and run the server
 	router.Run(":5000")
